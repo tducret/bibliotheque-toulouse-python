@@ -6,7 +6,7 @@ Recherche des exemplaires disponibles du roman Le meilleur des mondes, d'Aldous 
     >>> exemplaires_trouves = bib.rechercher("Le meilleur des mondes", "Aldous Huxley")
 """
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 from bibliothequetoulouse.client import Client
 
@@ -17,11 +17,3 @@ def rechercher(titre="", auteur=""):
     bib = Client()
     liste_resultats = bib.rechercher(titre, auteur)
     return liste_resultats
-    
-# Exemple
-#import bibliothequetoulouse as bib
-#import json
-
-#liste_resultats = bib.rechercher(titre=u"si c'est un homme", auteur=u"primo levi")
-#print json.dumps(liste_resultats, ensure_ascii=False, indent=4, sort_keys=True)
-#print "%d resultat(s)" % len(liste_resultats)
