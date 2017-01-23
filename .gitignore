@@ -11,3 +11,10 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Release generated files #
+###########################
+.eggs/
+build/
+dist/
+MANIFEST
