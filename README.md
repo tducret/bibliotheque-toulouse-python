@@ -24,4 +24,4 @@ import json
 liste_resultats = bib.rechercher(titre=u"le meilleur des mondes", auteur=u"aldous huxley")
 print json.dumps(liste_resultats, ensure_ascii=False, indent=4, sort_keys=True)
 print "%d resultat(s)" % len(liste_resultats)
-``
+```
