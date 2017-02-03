@@ -3,7 +3,8 @@ from setuptools import setup
 
 requirements = [
     'requests>=2.10.0',
-    'beautifulsoup4>=4.4.1'
+    'beautifulsoup4>=4.4.1',
+    'lxml>=3.6.0'
 ]
 
 setup(
