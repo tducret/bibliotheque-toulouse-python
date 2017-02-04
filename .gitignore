@@ -19,3 +19,5 @@ build/
 dist/
 MANIFEST
 bibliothequetoulouse.egg-info
+
+test.py

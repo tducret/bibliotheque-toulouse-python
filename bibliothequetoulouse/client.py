@@ -7,6 +7,10 @@ import requests
 from bs4 import BeautifulSoup
 from urlparse import urljoin
 import json
+from multiprocessing.dummy import Pool as ThreadPool
+import traceback # Analyse traces exception
+from time import sleep
+import itertools
 
 _URL_BASE="http://catalogues.toulouse.fr/web2/tramp2.exe/"
 _URL_PAGE_ACCUEIL=urljoin(_URL_BASE,"log_in?setting_key=BMT1")
@@ -15,21 +19,30 @@ _TIMEOUT=30
 _TITRE_PAGE_UN_RESULTAT=u"Notice détaillée Web2"
 _TITRE_PAGE_PLUSIEURS_RESULTATS=u"Résultats de recherche"
 _DEFAULT_BEAUTIFULSOUP_PARSER="lxml"
+_TAILLE_THREADPOOL = 5
+_NB_TENTATIVES_REQUETES = 15 # Nombre de tentatives de requêtes HTTP pour les pages de résultats (renvoie souvent une erreur CGI en cas de multithreading)
 
 JAI_UNE_SESSION = False # = True quand on s'est au moins connecté une fois à l'accueil de la bibliothèque
 URL_RECHERCHE = "" # Tant qu'on n'a pas de session, on n'a pas l'url de recherche
 ID_SESSION = ""
-    
+
+def aplatir_liste(liste):
+    """ Transforme une liste de liste en une liste simple [[a,b],c] => [a,b,c]"""
+    liste_aplatie = itertools.chain(*liste)
+    return list(liste_aplatie)
+
 class Client(object):
     """Fait les requêtes avec le serveur du catalogue des bibliothèques de Toulouse"""
     
     def __init__(self):
         """ Initialisation du client """
-    
         self.session = requests.session()
         
     def _get(self, url):
-        return self.session.get(url).text
+        headers = {'Origin': 'http://catalogues.toulouse.fr',
+                   'Accept-Encoding': 'gzip, deflate',
+                   'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'}
+        return self.session.get(url, headers=headers).text
     
     def _construire_url_recherche(self, titre, auteur):
         requete = ""
@@ -55,9 +68,11 @@ class Client(object):
             elements = soup.select(css_selector)
         except:
             print("ERROR : exception dans _css_selector") #TODO : Ajouter une exception
+            print(traceback.format_exc())
         return elements
     
     def _normaliser_auteur(self, auteur_brut):
+        """ A partir d'un auteur du type 'nom, prenom', renvoie une chaine 'prenom nom' """
         auteur=self._normaliser_chaine(auteur_brut)
         if len(auteur.split(',')) == 2 :
             nom, prenom = auteur.split(',')
@@ -65,60 +80,72 @@ class Client(object):
         return auteur
     
     def _normaliser_titre(self, titre_brut):
+        """ Normalise le titre (ex : 'Le meilleur des mondes /' => 'Le meilleur des mondes'"""
         titre=self._normaliser_chaine(titre_brut)
         if titre[-1] == '/' : titre = titre[:-1] # Les titres finissent souvent par '/', ex : "Le meilleur des mondes /"
         titre = titre.strip()
         return titre
             
-    def _extraire_infos_page_detaillee(self, soup="", page_html_detaillee="", url=""):
+    def _extraire_infos_page_detaillee(self, url="", soup="", page_html_detaillee=""):
         """ Extrait les infos de la page détaillée d'une oeuvre, via le résultat de beautifulsoup,
         via le code source de la page, ou via l'URL """
         
-        dict_infos = {}
+        try :
+            dict_infos = {}
         
-        if (soup == ""):
-            if (page_html_detaillee == "") : page_html_detaillee = self._get(url)
-            soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
+            if (soup == ""):
+                if (page_html_detaillee == "") :
+                    nb_tentatives = 0
+                    while True:
+                        page_html_detaillee = self._get(url)
+                        nb_tentatives += 1
+                        if "Erreur CGI" not in page_html_detaillee : break # on refait la requête HTTP si elle renvoie une erreur
+                        if nb_tentatives > _NB_TENTATIVES_REQUETES : break
+                        #sleep(1) # On attend 1 seconde avant la prochaine tentative
+                    
+                    soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
             
-        auteur_brut = self._css_selector(soup, 'div[id="auteur"] > a')[0].text.strip()
-        auteur = self._normaliser_auteur(auteur_brut)
-        titre_brut = self._css_selector(soup, 'td[width="95%"] > h1')[0].text.strip()
-        titre = self._normaliser_titre(titre_brut)
+            auteur_brut = self._css_selector(soup, 'div[id="auteur"] > a')[0].text.strip()
+            auteur = self._normaliser_auteur(auteur_brut)
+            titre_brut = self._css_selector(soup, 'td[width="95%"] > h1')[0].text.strip()
+            titre = self._normaliser_titre(titre_brut)
         
-        url_permanent = self._css_selector(soup, '#BW_link > input')
-        if len(url_permanent) > 0 : url_permanent=url_permanent[0]["value"].strip()
-        else : url_permanent=""
+            url_permanent = self._css_selector(soup, '#BW_link > input')
+            if len(url_permanent) > 0 : url_permanent=url_permanent[0]["value"].strip()
+            else : url_permanent=""
         
-        isbn = self._css_selector(soup, '#isbn_livre')
-        if len(isbn) > 0 : isbn=isbn[0].text.strip()
-        else : isbn=""
+            isbn = self._css_selector(soup, '#isbn_livre')
+            if len(isbn) > 0 : isbn=isbn[0].text.strip()
+            else : isbn=""
         
-        tableau_exemplaires = self._css_selector(soup, '#exemplaire_table > tr')
-        liste_exemplaires = []
-        for ligne in tableau_exemplaires:
-            cellules = self._css_selector(ligne, 'td.holdingslistbab')
-            if len(cellules) == 5: # Les lignes intéressantes contiennent 5 cellules
-                dict_exemplaire = { u'bibliotheque'  : self._normaliser_chaine(cellules[0].text),
-                                    u'cote'          : self._normaliser_chaine(cellules[1].text),
-                                    u'materiel'      : self._normaliser_chaine(cellules[2].text),
-                                    u'localisation'  : self._normaliser_chaine(cellules[3].text),
-                                    u'retour_attendu': self._normaliser_chaine(cellules[4].text)
-                                 }
-                non_dispo = {u"Prêté", u"Document indisponible, acheminement en cours", u"Réservé"}
+            tableau_exemplaires = self._css_selector(soup, '#exemplaire_table > tr')
+            liste_exemplaires = []
+            for ligne in tableau_exemplaires:
+                cellules = self._css_selector(ligne, 'td.holdingslistbab')
+                if len(cellules) == 5: # Les lignes intéressantes contiennent 5 cellules
+                    dict_exemplaire = { u'titre'         : titre,
+                                        u'auteur'        : auteur,
+                                        u'isbn'          : isbn,
+                                        u'bibliotheque'  : self._normaliser_chaine(cellules[0].text),
+                                        u'cote'          : self._normaliser_chaine(cellules[1].text),
+                                        u'materiel'      : self._normaliser_chaine(cellules[2].text),
+                                        u'localisation'  : self._normaliser_chaine(cellules[3].text),
+                                        u'retour_attendu': self._normaliser_chaine(cellules[4].text),
+                                        u'url_permanent' : url_permanent
+                                     }
+                    non_dispo = {u"Prêté", u"Document indisponible, acheminement en cours", u"Réservé"}
 
-                if (dict_exemplaire[u'localisation'] in non_dispo) or (dict_exemplaire[u'materiel'] == ""):
-                    dict_exemplaire[u'dispo'] = False
-                else : dict_exemplaire[u'dispo'] = True
+                    if (dict_exemplaire[u'localisation'] in non_dispo) or (dict_exemplaire[u'materiel'] == ""):
+                        dict_exemplaire[u'dispo'] = False
+                    else : dict_exemplaire[u'dispo'] = True
                 
-                liste_exemplaires.append(dict_exemplaire)
-                
-        dict_infos[u'titre'] = titre
-        dict_infos[u'auteur'] = auteur
-        dict_infos[u'url_permanent'] = url_permanent
-        dict_infos[u'isbn'] = isbn
-        dict_infos[u'exemplaires'] = liste_exemplaires
+                    liste_exemplaires.append(dict_exemplaire)
+        except:
+            print("ERROR : _extraire_infos_page_detaillee")
+            print(traceback.format_exc())
+            liste_exemplaires = []
         
-        return dict_infos
+        return liste_exemplaires
     
     def _extraire_infos_page_plusieurs_resultats(self, soup="", page_html_detaillee="", url=""):
         """ Extrait les infos de chacune des pages détaillées des résultats,
@@ -135,10 +162,24 @@ class Client(object):
         url_premier_resultat = urljoin(_URL_BASE,url_premier_resultat)
         
         liste_infos = []
-        for indice_resultat in range(1,nb_resultats+1):
+        #for indice_resultat in range(1,nb_resultats+1):
             #TODO : Ajouter le multithreading pour accélérer le traitement (22s pour 15 résultats)
-            url_resultat = url_premier_resultat.replace(u"item=1", u"item=%d" % (indice_resultat))
-            liste_infos.append(self._extraire_infos_page_detaillee(url=url_resultat))
+            #url_resultat = url_premier_resultat.replace(u"item=1", u"item=%d" % (indice_resultat))
+            #liste_infos+=(self._extraire_infos_page_detaillee(url=url_resultat))
+        
+        urls = []
+        for indice_resultat in range(1,nb_resultats+1):
+            urls.append(url_premier_resultat.replace(u"item=1", u"item=%d" % (indice_resultat)))
+        
+        # Make the Pool of workers
+        #print urls
+        pool = ThreadPool(_TAILLE_THREADPOOL)
+        liste_infos = pool.map(self._extraire_infos_page_detaillee, urls)
+        #close the pool and wait for the work to finish 
+        pool.close() 
+        pool.join()
+        liste_infos = aplatir_liste(liste_infos)
+        
         return liste_infos
     
     def _normaliser_chaine(self, chaine):
