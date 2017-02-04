@@ -1,16 +1,14 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup
+from pip.req import parse_requirements
 
-requirements = [
-    'requests>=2.10.0',
-    'beautifulsoup4>=4.4.1',
-    'lxml>=3.6.0'
-]
+install_reqs = parse_requirements('requirements.txt')
+requirements = [str(ir.req) for ir in install_reqs]
 
 setup(
   name = 'bibliothequetoulouse',
   packages = ['bibliothequetoulouse'],
-  version = '0.1.1',
+  version = '0.1.2',
   license='MIT',
   platforms='Posix; MacOS X',
   description = 'Package pour interroger le catalogue des bibliothèques de Toulouse',
