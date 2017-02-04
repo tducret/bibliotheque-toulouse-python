@@ -6,11 +6,11 @@ Fonctionnalité permettant de faire les requêtes HTTP vers le serveur du catalo
 import requests
 from bs4 import BeautifulSoup
 from urlparse import urljoin
-import json
 from multiprocessing.dummy import Pool as ThreadPool
 import traceback # Analyse traces exception
 from time import sleep
 import itertools
+from difflib import SequenceMatcher
 
 _URL_BASE="http://catalogues.toulouse.fr/web2/tramp2.exe/"
 _URL_PAGE_ACCUEIL=urljoin(_URL_BASE,"log_in?setting_key=BMT1")
@@ -21,15 +21,17 @@ _TITRE_PAGE_PLUSIEURS_RESULTATS=u"Résultats de recherche"
 _DEFAULT_BEAUTIFULSOUP_PARSER="lxml"
 _TAILLE_THREADPOOL = 5
 _NB_TENTATIVES_REQUETES = 15 # Nombre de tentatives de requêtes HTTP pour les pages de résultats (renvoie souvent une erreur CGI en cas de multithreading)
-
-JAI_UNE_SESSION = False # = True quand on s'est au moins connecté une fois à l'accueil de la bibliothèque
-URL_RECHERCHE = "" # Tant qu'on n'a pas de session, on n'a pas l'url de recherche
-ID_SESSION = ""
+_NB_PAGES_RESULTATS_MAX = 100 # Nombre de pages de résultats maximum (on ne récupère que les _NB_PAGES_RESULTATS_MAX premières pages)
 
 def aplatir_liste(liste):
     """ Transforme une liste de liste en une liste simple [[a,b],c] => [a,b,c]"""
     liste_aplatie = itertools.chain(*liste)
     return list(liste_aplatie)
+
+def similar(a, b):
+    """ Renvoie un score de similitude entre 2 chaines, =1 si ce sont les mêmes """
+    similarite = SequenceMatcher(None, a, b).ratio()
+    return round(similarite, 2)
 
 class Client(object):
     """Fait les requêtes avec le serveur du catalogue des bibliothèques de Toulouse"""
@@ -47,9 +49,9 @@ class Client(object):
     def _construire_url_recherche(self, titre, auteur):
         requete = ""
         if (titre != ""):
-            requete = u"TI %s" % (titre)
-            if (auteur != "") : requete += u" ET AU %s" % (auteur)
-        elif (auteur != "") : requete = u"AU %s" % (auteur)
+            requete = u"TI \"%s\"" % (titre)
+            if (auteur != "") : requete += u" ET AU \"%s\"" % (auteur)
+        elif (auteur != "") : requete = u"AU \"%s\"" % (auteur)
         requete=requete.strip()
         return (_URL_RECHERCHE+requete)
     
@@ -86,6 +88,15 @@ class Client(object):
         titre = titre.strip()
         return titre
             
+    def _calcul_pertinence(self, titre, auteur):
+        """ Calcule la pertinence du résultat, en fonction de la similarité entre le résultat et le titre et auteur recherché """
+        pertinence = 1
+        if titre != "":
+            pertinence *= similar(self.titre_recherche.lower(), titre.lower())
+        if auteur != "":
+            pertinence *= similar(self.auteur_recherche.lower(), auteur.lower())
+        return pertinence
+    
     def _extraire_infos_page_detaillee(self, url="", soup="", page_html_detaillee=""):
         """ Extrait les infos de la page détaillée d'une oeuvre, via le résultat de beautifulsoup,
         via le code source de la page, ou via l'URL """
@@ -101,13 +112,18 @@ class Client(object):
                         nb_tentatives += 1
                         if "Erreur CGI" not in page_html_detaillee : break # on refait la requête HTTP si elle renvoie une erreur
                         if nb_tentatives > _NB_TENTATIVES_REQUETES : break
-                        #sleep(1) # On attend 1 seconde avant la prochaine tentative
+                        sleep(1) # On attend 1 seconde avant la prochaine tentative
                     
                     soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
             
-            auteur_brut = self._css_selector(soup, 'div[id="auteur"] > a')[0].text.strip()
+            auteur_brut = self._css_selector(soup, 'div[id="auteur"] > a')
+            if len(auteur_brut) > 0 : auteur_brut=auteur_brut[0].text.strip()
+            else : auteur_brut = ""
             auteur = self._normaliser_auteur(auteur_brut)
-            titre_brut = self._css_selector(soup, 'td[width="95%"] > h1')[0].text.strip()
+            
+            titre_brut = self._css_selector(soup, 'td[width="95%"] > h1')
+            if len(titre_brut) > 0 : titre_brut =  titre_brut[0].text.strip()
+            else : titre_brut
             titre = self._normaliser_titre(titre_brut)
         
             url_permanent = self._css_selector(soup, '#BW_link > input')
@@ -117,6 +133,8 @@ class Client(object):
             isbn = self._css_selector(soup, '#isbn_livre')
             if len(isbn) > 0 : isbn=isbn[0].text.strip()
             else : isbn=""
+            
+            pertinence = self._calcul_pertinence(titre, auteur)
         
             tableau_exemplaires = self._css_selector(soup, '#exemplaire_table > tr')
             liste_exemplaires = []
@@ -131,9 +149,10 @@ class Client(object):
                                         u'materiel'      : self._normaliser_chaine(cellules[2].text),
                                         u'localisation'  : self._normaliser_chaine(cellules[3].text),
                                         u'retour_attendu': self._normaliser_chaine(cellules[4].text),
-                                        u'url_permanent' : url_permanent
+                                        u'url_permanent' : url_permanent,
+                                        u'pertinence'    : pertinence
                                      }
-                    non_dispo = {u"Prêté", u"Document indisponible, acheminement en cours", u"Réservé"}
+                    non_dispo = {u"Prêté", u"Document indisponible, acheminement en cours", u"Réservé", u"En traitement"}
 
                     if (dict_exemplaire[u'localisation'] in non_dispo) or (dict_exemplaire[u'materiel'] == ""):
                         dict_exemplaire[u'dispo'] = False
@@ -161,21 +180,14 @@ class Client(object):
         url_premier_resultat = self._css_selector(soup,'td[class="itemlisting"] > h1 > a')[0]['href']
         url_premier_resultat = urljoin(_URL_BASE,url_premier_resultat)
         
-        liste_infos = []
-        #for indice_resultat in range(1,nb_resultats+1):
-            #TODO : Ajouter le multithreading pour accélérer le traitement (22s pour 15 résultats)
-            #url_resultat = url_premier_resultat.replace(u"item=1", u"item=%d" % (indice_resultat))
-            #liste_infos+=(self._extraire_infos_page_detaillee(url=url_resultat))
-        
         urls = []
+        if nb_resultats > _NB_PAGES_RESULTATS_MAX : nb_resultats = _NB_PAGES_RESULTATS_MAX
         for indice_resultat in range(1,nb_resultats+1):
             urls.append(url_premier_resultat.replace(u"item=1", u"item=%d" % (indice_resultat)))
         
-        # Make the Pool of workers
-        #print urls
+        liste_infos = []
         pool = ThreadPool(_TAILLE_THREADPOOL)
         liste_infos = pool.map(self._extraire_infos_page_detaillee, urls)
-        #close the pool and wait for the work to finish 
         pool.close() 
         pool.join()
         liste_infos = aplatir_liste(liste_infos)
@@ -184,8 +196,14 @@ class Client(object):
     
     def _normaliser_chaine(self, chaine):
         return chaine.replace('\n',' ').replace('\r','').replace('\t',' ').replace('  ',' ').strip()
+    
         
-    def rechercher(self, titre="", auteur=""):
+    def rechercher(self, titre="", auteur="", pertinence_minimum = 0.7):
+        
+        self.titre_recherche = titre
+        self.auteur_recherche = auteur
+        self.pertinence_minimum = pertinence_minimum
+        
         liste_resultats = []
         
         page_html_resultats = self._get(self._construire_url_recherche(titre=titre, auteur=auteur))
@@ -203,6 +221,6 @@ class Client(object):
         
             else :
                 print("**Page avec titre inconnu**\n\n")
-                print(titre_page)
+                print(titre_page)        
         
         return liste_resultats
