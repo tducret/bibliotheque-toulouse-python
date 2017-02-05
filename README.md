@@ -1,6 +1,8 @@
 bibliothequetoulouse
 ====================================
 
+[![Build Status](https://travis-ci.org/thibdct/bibliotheque-toulouse-python.svg?branch=master)](https://travis-ci.org/thibdct/bibliotheque-toulouse-python)
+
 ## Description
 
 Ce package permet d'interroger très simplement le catalogue des [bibliothèques de Toulouse](http://bibliotheque.toulouse.fr).
