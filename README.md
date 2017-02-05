@@ -33,6 +33,8 @@ Cet exemple permet de récupérer les informations sur tous les exemplaires du m
 
 ```python
 # -*- coding: utf-8 -*-
+import bibliothequetoulouse as bib
+
 resultats = bib.rechercher(titre=u"le meilleur des mondes",
                            auteur=u"aldous huxley",
                            bibli_souhaitees=[u'Médiathèque José Cabanis'])
