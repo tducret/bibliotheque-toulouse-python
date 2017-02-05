@@ -20,4 +20,5 @@ setup(
   setup_requires=requirements,
   install_requires=requirements,
   classifiers = ['Programming Language :: Python :: 2.7'],
+  tests_require=['pytest'],
 )
