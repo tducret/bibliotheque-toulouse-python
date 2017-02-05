@@ -2,7 +2,7 @@
 from setuptools import setup
 from pip.req import parse_requirements
 
-_VERSION = '0.1.4'
+_VERSION = '0.1.5'
 install_reqs = parse_requirements('requirements.txt', session='hack')
 requirements = [str(ir.req) for ir in install_reqs]
 
