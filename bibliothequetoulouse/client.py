@@ -18,7 +18,7 @@ _URL_RECHERCHE=urljoin(_URL_BASE,"do_keyword_search/log_in?setting_key=BMT1&serv
 _TIMEOUT=30
 _TITRE_PAGE_UN_RESULTAT=u"Notice détaillée Web2"
 _TITRE_PAGE_PLUSIEURS_RESULTATS=u"Résultats de recherche"
-_DEFAULT_BEAUTIFULSOUP_PARSER="lxml"
+_DEFAULT_BEAUTIFULSOUP_PARSER="html.parser"
 _TAILLE_THREADPOOL = 5
 _NB_TENTATIVES_REQUETES = 15 # Nombre de tentatives de requêtes HTTP pour les pages de résultats (renvoie souvent une erreur CGI en cas de multithreading)
 _NB_PAGES_RESULTATS_MAX = 100 # Nombre de pages de résultats maximum (on ne récupère que les _NB_PAGES_RESULTATS_MAX premières pages)
