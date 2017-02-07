@@ -6,3 +6,8 @@ def test_recherche_classique():
                                auteur=u"aldous huxley",
                                bibli_souhaitees=[u'Médiathèque José Cabanis'])
     assert len(resultats) > 0
+
+def test_recherche_un_seule_page_detaillee():
+    resultats = bib.rechercher(titre=u"L'homme sans argent",
+                               auteur=u"Mark Boyle")
+    assert len(resultats) > 0

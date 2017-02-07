@@ -214,7 +214,7 @@ class Client(object):
             titre_page = soup.title.string
     
             if titre_page == _TITRE_PAGE_UN_RESULTAT: # S'il n'y a qu'un seul résultat, la page est directement celle détaillée
-                liste_resultats.append(self._extraire_infos_page_detaillee(soup=soup))
+                liste_resultats = self._extraire_infos_page_detaillee(soup=soup)
         
             elif _TITRE_PAGE_PLUSIEURS_RESULTATS in titre_page:
                 liste_resultats = self._extraire_infos_page_plusieurs_resultats(soup=soup)
