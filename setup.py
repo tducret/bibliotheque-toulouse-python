@@ -20,6 +20,7 @@ setup(
   keywords = ['api', 'bibliothèque', 'toulouse'],
   setup_requires=requirements,
   install_requires=requirements,
-  classifiers = ['Programming Language :: Python :: 2.7'],
+  classifiers = ['Programming Language :: Python :: 2.7',
+                 'Programming Language :: Python :: 3.6'],
   tests_require=['pytest'],
 )

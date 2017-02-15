@@ -13,7 +13,7 @@ Ce package permet d'interroger très simplement le catalogue des [bibliothèques
 Pré-requis
 =======
 
- - Python 2.7
+ - Python 2.7 ou 3.6
 
 Installation
 =======
