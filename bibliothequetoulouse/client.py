@@ -38,6 +38,13 @@ def similar(a, b):
     similarite = SequenceMatcher(None, a, b).ratio()
     return round(similarite, 2)
 
+def _css_select(soup, css_selector):
+        """ Renvoie le contenu de l'élément du sélecteur CSS, ou une chaine vide """
+        selection = soup.select(css_selector)
+        if len(selection) > 0 : retour=selection[0].text.strip()
+        else : retour = u""
+        return retour
+
 class Client(object):
     """Fait les requêtes avec le serveur du catalogue des bibliothèques de Toulouse"""
     
@@ -83,7 +90,7 @@ class Client(object):
         if self.auteur_recherche != "":
             pertinence *= similar(self.auteur_recherche.lower(), auteur.lower())
         return pertinence
-    
+        
     def _extraire_infos_page_detaillee(self, url="", soup="", page_html_detaillee=""):
         """ Extrait les infos de la page détaillée d'une oeuvre, via le résultat de beautifulsoup,
         via le code source de la page, ou via l'URL """
@@ -103,23 +110,17 @@ class Client(object):
                     
                     soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
             
-            auteur_brut = soup.select('div[id="auteur"] > a')
-            if len(auteur_brut) > 0 : auteur_brut=auteur_brut[0].text.strip()
-            else : auteur_brut = u""
+            auteur_brut = _css_select(soup, 'div[id="auteur"] > a')
             auteur = self._normaliser_auteur(auteur_brut)
             
-            titre_brut = soup.select('td[width="95%"] > h1')
-            if len(titre_brut) > 0 : titre_brut =  titre_brut[0].text.strip()
-            else : titre_brut = u""
+            titre_brut = _css_select(soup, 'td[width="95%"] > h1')
             titre = self._normaliser_titre(titre_brut)
         
             url_permanent = soup.select('#BW_link > input')
             if len(url_permanent) > 0 : url_permanent=url_permanent[0]["value"].strip()
             else : url_permanent = u""
         
-            isbn = soup.select('#isbn_livre')
-            if len(isbn) > 0 : isbn=isbn[0].text.strip()
-            else : isbn = u""
+            isbn = _css_select(soup, '#isbn_livre')
             
             pertinence = self._calcul_pertinence(titre, auteur)
         
