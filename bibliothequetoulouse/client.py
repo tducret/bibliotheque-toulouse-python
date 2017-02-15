@@ -16,9 +16,9 @@ from time import sleep
 import itertools
 from difflib import SequenceMatcher
 
-_URL_BASE="http://catalogues.toulouse.fr/web2/tramp2.exe/"
-_URL_PAGE_ACCUEIL=urljoin(_URL_BASE,"log_in?setting_key=BMT1")
-_URL_RECHERCHE=urljoin(_URL_BASE,"do_keyword_search/log_in?setting_key=BMT1&servers=1home&screen=hitlist.html&query=")
+_URL_BASE=u"http://catalogues.toulouse.fr/web2/tramp2.exe/"
+_URL_PAGE_ACCUEIL=urljoin(_URL_BASE,u"log_in?setting_key=BMT1")
+_URL_RECHERCHE=urljoin(_URL_BASE,u"do_keyword_search/log_in?setting_key=BMT1&servers=1home&screen=hitlist.html&query=")
 _TIMEOUT=30
 _TITRE_PAGE_UN_RESULTAT=u"Notice détaillée Web2"
 _TITRE_PAGE_PLUSIEURS_RESULTATS=u"Résultats de recherche"
