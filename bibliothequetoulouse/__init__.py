@@ -6,7 +6,7 @@ Recherche des exemplaires disponibles du roman Le meilleur des mondes, d'Aldous 
     >>> exemplaires_trouves = bib.rechercher("Le meilleur des mondes", "Aldous Huxley")
 """
 
-__version__ = '0.1.7'
+__version__ = '0.1.8'
 
 from builtins import object
 from bibliothequetoulouse.client import Client
@@ -27,7 +27,7 @@ class Liste_resultats(object):
         return Resultat(self.liste_resultats[key])
     
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        return _pretty_print_json(self.liste_resultats)
+        return _pretty_print_json(self.liste_resultats) #TODO : Se rendre compatible à Python 3 (l'objet retourné doit être une string, et pas un objet bytes)
 
 class Resultat(object):
     """ Classe représentant un résultat de recherche dans le catalogue """
@@ -41,7 +41,7 @@ class Resultat(object):
         return self.resultat.get(key)
         
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        return _pretty_print_json(self.resultat)
+        return _pretty_print_json(self.resultat) #TODO : Se rendre compatible à Python 3 (l'objet retourné doit être une string, et pas un objet bytes)
 
 def _pretty_print_json(python_object):
     """ Renvoie une chaine JSON indentée """
