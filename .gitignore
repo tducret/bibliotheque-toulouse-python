@@ -20,3 +20,7 @@ dist/
 MANIFEST
 bibliothequetoulouse.egg-info
 .cache
+
+# Coverage #
+############
+.coverage

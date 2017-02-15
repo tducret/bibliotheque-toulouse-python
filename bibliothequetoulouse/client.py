@@ -221,6 +221,7 @@ class Client(object):
         
             else :
                 print("**Page avec titre inconnu**\n\n")
-                print(titre_page)        
+                print(titre_page)
+                print page_html_resultats
         
         return liste_resultats

@@ -4,9 +4,12 @@ python:
 cache: pip
 install:
 - pip install -r requirements.txt
+- pip install coveralls
 - pip install .
 script:
-- py.test
+  coverage run --source=bibliothequetoulouse setup.py test
+after_success:
+  coveralls
 deploy:
   provider: pypi
   user: "thibdct"
