@@ -3,9 +3,13 @@
 Fonctionnalité permettant de faire les requêtes HTTP vers le serveur du catalogue des bibliothèques de Toulouse <http://catalogues.toulouse.fr>
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
 import requests
 from bs4 import BeautifulSoup
-from urlparse import urljoin
+from urllib.parse import urljoin
 from multiprocessing.dummy import Pool as ThreadPool
 import traceback # Analyse traces exception
 from time import sleep

@@ -8,6 +8,7 @@ Recherche des exemplaires disponibles du roman Le meilleur des mondes, d'Aldous 
 
 __version__ = '0.1.7'
 
+from builtins import object
 from bibliothequetoulouse.client import Client
 import json
 
@@ -51,12 +52,12 @@ def rechercher(titre="", auteur="", pertinence_minimum=0.7, bibli_souhaitees=[],
     liste_resultats = bib.rechercher(titre, auteur)
     
     # Filtres
-    liste_resultats_filtree = filter(lambda x: x['pertinence'] > pertinence_minimum, liste_resultats)
+    liste_resultats_filtree = [x for x in liste_resultats if x['pertinence'] > pertinence_minimum]
     if len(bibli_souhaitees) > 0: # On ne filtre pas sur les bibliothèques si aucune n'est spécifiée
-        liste_resultats_filtree = filter(lambda x: x['bibliotheque'] in bibli_souhaitees, liste_resultats_filtree)
+        liste_resultats_filtree = [x for x in liste_resultats_filtree if x['bibliotheque'] in bibli_souhaitees]
     if dispo_uniquement:
-        liste_resultats_filtree = filter(lambda x: x['dispo'] == True, liste_resultats_filtree)
+        liste_resultats_filtree = [x for x in liste_resultats_filtree if x['dispo'] == True]
     if sauf_braille:
-        liste_resultats_filtree = filter(lambda x: u'braille' not in x['materiel'].lower(), liste_resultats_filtree)
+        liste_resultats_filtree = [x for x in liste_resultats_filtree if u'braille' not in x['materiel'].lower()]
     
     return Liste_resultats(liste_resultats_filtree)
