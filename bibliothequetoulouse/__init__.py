@@ -33,10 +33,7 @@ class Liste_resultats(object):
         return Resultat(self.liste_resultats[key])
     
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        if _PYTHON_3 :
-            return _pretty_print_json(self.liste_resultats).decode('latin1')
-        else :
-            return _pretty_print_json(self.liste_resultats)
+        return _pretty_print_json(self.liste_resultats)
 
 class Resultat(object):
     """ Classe représentant un résultat de recherche dans le catalogue """
@@ -50,14 +47,15 @@ class Resultat(object):
         return self.resultat.get(key)
         
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        if _PYTHON_3 :
-            return _pretty_print_json(self.resultat).decode('latin1')
-        else :
-            return _pretty_print_json(self.resultat)
+        return _pretty_print_json(self.resultat)
 
 def _pretty_print_json(python_object):
     """ Renvoie une chaine JSON indentée """
-    return json.dumps(python_object, ensure_ascii=False, indent=4, sort_keys=True).encode('utf-8').strip()
+    chaine_json = json.dumps(python_object, ensure_ascii=False, indent=4, sort_keys=True).strip()
+    if _PYTHON_3 :
+        return chaine_json
+    else :
+        return chaine_json.encode('utf-8')
     
 def rechercher(titre="", auteur="", pertinence_minimum=0.7, bibli_souhaitees=[], dispo_uniquement=False, sauf_braille=True):
     bib = Client()
