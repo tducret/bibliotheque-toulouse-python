@@ -1,24 +1,29 @@
 bibliothequetoulouse
-====================================
+=======
 
 [![Build Status](https://travis-ci.org/thibdct/bibliotheque-toulouse-python.svg?branch=master)](https://travis-ci.org/thibdct/bibliotheque-toulouse-python)
 [![Coverage Status](https://coveralls.io/repos/github/thibdct/bibliotheque-toulouse-python/badge.svg)](https://coveralls.io/github/thibdct/bibliotheque-toulouse-python)
+![License](https://img.shields.io/badge/license-MIT-lightgray.svg) 
 
-## Description
+Description
+=======
 
 Ce package permet d'interroger très simplement le catalogue des [bibliothèques de Toulouse](http://bibliotheque.toulouse.fr).
  
-## Pré-requis
+Pré-requis
+=======
 
  - Python 2.7
 
-## Installation
+Installation
+=======
 
     $ pip install -U bibliothequetoulouse
 
-## Utilisation
+Utilisation
+=======
 
-Cet exemple permet de récupérer les informations sur les exemplaires **disponibles** d'un livre dans toutes les bibliothèques de Toulouse, et de les afficher au format JSON :
+* Pour récupérer les informations sur les exemplaires **disponibles** d'un livre dans toutes les bibliothèques de Toulouse, et de les afficher au format JSON
 
 ```python
 # -*- coding: utf-8 -*-
@@ -65,7 +70,7 @@ Ce qui renverra ce type de résultats :
 ]
 ```
 
-Cet exemple permet de récupérer les informations sur tous les exemplaires du même livre de la Médiathèque José Cabanis (disponibles à l'emprunt ou non) :
+* Pour récupérer les informations sur tous les exemplaires du même livre à la **Médiathèque José Cabanis** (disponibles à l'emprunt ou non) :
 
 ```python
 # -*- coding: utf-8 -*-
