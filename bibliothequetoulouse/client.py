@@ -26,6 +26,7 @@ _DEFAULT_BEAUTIFULSOUP_PARSER="html.parser"
 _TAILLE_THREADPOOL = 5
 _NB_TENTATIVES_REQUETES = 15 # Nombre de tentatives de requêtes HTTP pour les pages de résultats (renvoie souvent une erreur CGI en cas de multithreading)
 _NB_PAGES_RESULTATS_MAX = 100 # Nombre de pages de résultats maximum (on ne récupère que les _NB_PAGES_RESULTATS_MAX premières pages)
+_TEMPS_ATTENTE_ENTRE_TENTATIVES_GETURL = 5
 
 def aplatir_liste(liste):
     """ Transforme une liste de liste en une liste simple [[a,b],c] => [a,b,c]"""
@@ -98,7 +99,7 @@ class Client(object):
                         nb_tentatives += 1
                         if "Erreur CGI" not in page_html_detaillee : break # on refait la requête HTTP si elle renvoie une erreur
                         if nb_tentatives > _NB_TENTATIVES_REQUETES : break
-                        sleep(1) # On attend 1 seconde avant la prochaine tentative
+                        sleep(_TEMPS_ATTENTE_ENTRE_TENTATIVES_GETURL)
                     
                     soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
             
@@ -193,7 +194,7 @@ class Client(object):
             nb_tentatives += 1
             if "Erreur CGI" not in page_html_resultats : break # on refait la requête HTTP si elle renvoie une erreur
             if nb_tentatives > _NB_TENTATIVES_REQUETES : break
-            sleep(1) # On attend 1 seconde avant la prochaine tentative
+            sleep(_TEMPS_ATTENTE_ENTRE_TENTATIVES_GETURL)
 
         soup = BeautifulSoup(page_html_resultats, _DEFAULT_BEAUTIFULSOUP_PARSER)
         
