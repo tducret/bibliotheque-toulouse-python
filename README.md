@@ -2,6 +2,7 @@ bibliothequetoulouse
 ====================================
 
 [![Build Status](https://travis-ci.org/thibdct/bibliotheque-toulouse-python.svg?branch=master)](https://travis-ci.org/thibdct/bibliotheque-toulouse-python)
+[![Coverage Status](https://coveralls.io/repos/github/thibdct/bibliotheque-toulouse-python/badge.svg)](https://coveralls.io/github/thibdct/bibliotheque-toulouse-python)
 
 ## Description
 
