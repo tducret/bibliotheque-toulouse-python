@@ -46,12 +46,12 @@ class Client(object):
                    'User-Agent' : 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.95 Safari/537.36'}
         return self.session.get(url, headers=headers).text
     
-    def _construire_url_recherche(self, titre, auteur):
+    def _construire_url_recherche(self):
         requete = ""
-        if (titre != ""):
-            requete = u"TI \"%s\"" % (titre)
-            if (auteur != "") : requete += u" ET AU \"%s\"" % (auteur)
-        elif (auteur != "") : requete = u"AU \"%s\"" % (auteur)
+        if (self.titre_recherche != ""):
+            requete = u"TI '%s'" % (self.titre_recherche)
+            if (self.auteur_recherche != "") : requete += u" ET AU '%s'" % (self.auteur_recherche)
+        elif (self.auteur_recherche != "") : requete = u"AU '%s'" % (self.auteur_recherche)
         requete=requete.strip()
         return (_URL_RECHERCHE+requete)
     
@@ -91,9 +91,9 @@ class Client(object):
     def _calcul_pertinence(self, titre, auteur):
         """ Calcule la pertinence du résultat, en fonction de la similarité entre le résultat et le titre et auteur recherché """
         pertinence = 1
-        if titre != "":
+        if self.titre_recherche != "":
             pertinence *= similar(self.titre_recherche.lower(), titre.lower())
-        if auteur != "":
+        if self.auteur_recherche != "":
             pertinence *= similar(self.auteur_recherche.lower(), auteur.lower())
         return pertinence
     
@@ -102,7 +102,7 @@ class Client(object):
         via le code source de la page, ou via l'URL """
         
         try :
-            dict_infos = {}
+            dict_exemplaire = {}
         
             if (soup == ""):
                 if (page_html_detaillee == "") :
@@ -206,7 +206,14 @@ class Client(object):
         
         liste_resultats = []
         
-        page_html_resultats = self._get(self._construire_url_recherche(titre=titre, auteur=auteur))
+        nb_tentatives = 0
+        while True:
+            page_html_resultats = self._get(self._construire_url_recherche())
+            nb_tentatives += 1
+            #print(page_html_resultats)
+            if "Erreur CGI" not in page_html_resultats : break # on refait la requête HTTP si elle renvoie une erreur
+            if nb_tentatives > _NB_TENTATIVES_REQUETES : break
+            sleep(1) # On attend 1 seconde avant la prochaine tentative
 
         soup = BeautifulSoup(page_html_resultats, _DEFAULT_BEAUTIFULSOUP_PARSER)
         
@@ -214,13 +221,14 @@ class Client(object):
             titre_page = soup.title.string
     
             if titre_page == _TITRE_PAGE_UN_RESULTAT: # S'il n'y a qu'un seul résultat, la page est directement celle détaillée
+                print(u"**Page avec un seul résultat**")
                 liste_resultats = self._extraire_infos_page_detaillee(soup=soup)
         
             elif _TITRE_PAGE_PLUSIEURS_RESULTATS in titre_page:
                 liste_resultats = self._extraire_infos_page_plusieurs_resultats(soup=soup)
         
             else :
-                print("**Page avec titre inconnu**\n\n")
+                print(u"**Page avec titre inconnu**\n\n")
                 print(titre_page)
                 print page_html_resultats
         
