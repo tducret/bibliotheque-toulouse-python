@@ -55,24 +55,6 @@ class Client(object):
         requete=requete.strip()
         return (_URL_RECHERCHE+requete)
     
-    def _css_selector(self, soup, css_selector="html"):
-        """ Retourne une liste d'éléments à partir d'un sélecteur CSS passé en paramètre """
-        # Dans Chrome, clic-droit sur un élément > Inspecter; puis dans le code source, clic-droit sur l'élément > Copy CSS path
-        # _css_selector(soup, "title") # get title tag
-        # _css_selector(soup, "body > a") # all a tag inside body
-        # _css_selector(soup, ".sister") # select by class
-        # _css_selector(soup, "#link1") # select by id
-        # _css_selector(soup, 'a[href="http://example.com/elsie"]') # find tags by attribute value
-        # _css_selector(soup, 'a[href^="http://example.com/"]') # find tags by attribute value, all contains 'http://example.com/'
-        
-        elements = []
-        try :
-            elements = soup.select(css_selector)
-        except:
-            print("ERROR : exception dans _css_selector") #TODO : Ajouter une exception
-            print(traceback.format_exc())
-        return elements
-    
     def _normaliser_auteur(self, auteur_brut):
         """ A partir d'un auteur du type 'nom, prenom', renvoie une chaine 'prenom nom' """
         auteur=self._normaliser_chaine(auteur_brut)
@@ -116,30 +98,30 @@ class Client(object):
                     
                     soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
             
-            auteur_brut = self._css_selector(soup, 'div[id="auteur"] > a')
+            auteur_brut = soup.select('div[id="auteur"] > a')
             if len(auteur_brut) > 0 : auteur_brut=auteur_brut[0].text.strip()
-            else : auteur_brut = ""
+            else : auteur_brut = u""
             auteur = self._normaliser_auteur(auteur_brut)
             
-            titre_brut = self._css_selector(soup, 'td[width="95%"] > h1')
+            titre_brut = soup.select('td[width="95%"] > h1')
             if len(titre_brut) > 0 : titre_brut =  titre_brut[0].text.strip()
-            else : titre_brut
+            else : titre_brut = u""
             titre = self._normaliser_titre(titre_brut)
         
-            url_permanent = self._css_selector(soup, '#BW_link > input')
+            url_permanent = soup.select('#BW_link > input')
             if len(url_permanent) > 0 : url_permanent=url_permanent[0]["value"].strip()
-            else : url_permanent=""
+            else : url_permanent = u""
         
-            isbn = self._css_selector(soup, '#isbn_livre')
+            isbn = soup.select('#isbn_livre')
             if len(isbn) > 0 : isbn=isbn[0].text.strip()
-            else : isbn=""
+            else : isbn = u""
             
             pertinence = self._calcul_pertinence(titre, auteur)
         
-            tableau_exemplaires = self._css_selector(soup, '#exemplaire_table > tr')
+            tableau_exemplaires = soup.select('#exemplaire_table > tr')
             liste_exemplaires = []
             for ligne in tableau_exemplaires:
-                cellules = self._css_selector(ligne, 'td.holdingslistbab')
+                cellules = ligne.select('td.holdingslistbab')
                 if len(cellules) == 5: # Les lignes intéressantes contiennent 5 cellules
                     dict_exemplaire = { u'titre'         : titre,
                                         u'auteur'        : auteur,
@@ -166,18 +148,14 @@ class Client(object):
         
         return liste_exemplaires
     
-    def _extraire_infos_page_plusieurs_resultats(self, soup="", page_html_detaillee="", url=""):
+    def _extraire_infos_page_plusieurs_resultats(self, soup=""):
         """ Extrait les infos de chacune des pages détaillées des résultats,
-        via le résultat de beautifulsoup, via le code source de la page, ou via l'URL """
+        via le résultat de beautifulsoup"""
         
-        if (soup == ""):
-            if (page_html_detaillee == "") : page_html_detaillee = self._get(url)
-            soup = BeautifulSoup(page_html_detaillee, _DEFAULT_BEAUTIFULSOUP_PARSER)
-        
-        nb_resultats_temp = self._normaliser_chaine(self._css_selector(soup,'td[class="enrichcontentbab"] > h2')[0].text)
+        nb_resultats_temp = self._normaliser_chaine(soup.select('td[class="enrichcontentbab"] > h2')[0].text)
         nb_resultats = int(nb_resultats_temp.split(u"a repéré")[1].split(u"titres")[0].strip())
         
-        url_premier_resultat = self._css_selector(soup,'td[class="itemlisting"] > h1 > a')[0]['href']
+        url_premier_resultat = soup.select('td[class="itemlisting"] > h1 > a')[0]['href']
         url_premier_resultat = urljoin(_URL_BASE,url_premier_resultat)
         
         urls = []
