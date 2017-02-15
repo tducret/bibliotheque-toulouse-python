@@ -75,3 +75,7 @@ def test_avec_braille():
                                auteur=u"aldous huxley", sauf_braille=False)
 
     assert len(resultats_sans_braille) < len(resultats_avec_braille)
+
+def test_livre_sans_auteur():
+    resultats = bib.rechercher(titre=u"Culture poker")
+    assert resultats[0].auteur == u""
