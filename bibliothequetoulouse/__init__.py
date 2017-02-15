@@ -11,9 +11,15 @@ __version__ = '0.1.8'
 from builtins import object
 from bibliothequetoulouse.client import Client
 import json
+import sys
 
 # Permet à Sphinx de récupérer ces éléments pour la documentation
 __all__ = ['Client']
+
+if (sys.version_info > (3, 0)):
+    _PYTHON_3 = True
+else:
+    _PYTHON_3 = False
 
 class Liste_resultats(object):
     """ Classe regroupant un liste de résultats d'une recherche dans le catalogue """
@@ -27,7 +33,10 @@ class Liste_resultats(object):
         return Resultat(self.liste_resultats[key])
     
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        return _pretty_print_json(self.liste_resultats) #TODO : Se rendre compatible à Python 3 (l'objet retourné doit être une string, et pas un objet bytes)
+        if _PYTHON_3 :
+            return _pretty_print_json(self.liste_resultats).decode('latin1')
+        else :
+            return _pretty_print_json(self.liste_resultats)
 
 class Resultat(object):
     """ Classe représentant un résultat de recherche dans le catalogue """
@@ -41,7 +50,10 @@ class Resultat(object):
         return self.resultat.get(key)
         
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
-        return _pretty_print_json(self.resultat) #TODO : Se rendre compatible à Python 3 (l'objet retourné doit être une string, et pas un objet bytes)
+        if _PYTHON_3 :
+            return _pretty_print_json(self.resultat).decode('latin1')
+        else :
+            return _pretty_print_json(self.resultat)
 
 def _pretty_print_json(python_object):
     """ Renvoie une chaine JSON indentée """
