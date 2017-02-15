@@ -7,7 +7,7 @@ install:
 - pip install coveralls
 - pip install .
 script:
-  coverage run --source=bibliothequetoulouse setup.py test
+  coverage run --source=bibliothequetoulouse -m pytest
 after_success:
   coveralls
 deploy:
