@@ -142,9 +142,8 @@ class Client(object):
                 
                     liste_exemplaires.append(dict_exemplaire)
         except:
-            print("ERROR : _extraire_infos_page_detaillee")
-            print(traceback.format_exc())
             liste_exemplaires = []
+            raise
         
         return liste_exemplaires
     
@@ -188,7 +187,6 @@ class Client(object):
         while True:
             page_html_resultats = self._get(self._construire_url_recherche())
             nb_tentatives += 1
-            #print(page_html_resultats)
             if "Erreur CGI" not in page_html_resultats : break # on refait la requête HTTP si elle renvoie une erreur
             if nb_tentatives > _NB_TENTATIVES_REQUETES : break
             sleep(1) # On attend 1 seconde avant la prochaine tentative
@@ -199,15 +197,12 @@ class Client(object):
             titre_page = soup.title.string
     
             if titre_page == _TITRE_PAGE_UN_RESULTAT: # S'il n'y a qu'un seul résultat, la page est directement celle détaillée
-                print(u"**Page avec un seul résultat**")
                 liste_resultats = self._extraire_infos_page_detaillee(soup=soup)
         
             elif _TITRE_PAGE_PLUSIEURS_RESULTATS in titre_page:
                 liste_resultats = self._extraire_infos_page_plusieurs_resultats(soup=soup)
         
             else :
-                print(u"**Page avec titre inconnu**\n\n")
-                print(titre_page)
-                print page_html_resultats
+                raise RuntimeError(u"Page avec titre inconnu", titre_page)
         
         return liste_resultats
