@@ -21,7 +21,7 @@ def afficher_resultat_detaille(resultat):
     print(u"URL permanente : %s" % (resultat.url_permanent))
     print(u"Pertinence : %.2f" % (resultat.pertinence))
     print(u"Disponibilité : %s" % (resultat.dispo))
-    print
+    print()
     print(u"Affichage par __getitem__")
     print(u"Titre : %s" % (resultat['titre']))
     print(u"Auteur : %s" % (resultat['auteur']))
