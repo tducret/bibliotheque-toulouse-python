@@ -26,6 +26,9 @@ class Liste_resultats(object):
     def __getitem__(self, key): # Méthode pour interroger l'objet comme une liste (ex : liste_resultats[1])
         return Resultat(self.liste_resultats[key])
     
+    def __str_(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
+        return _pretty_print_json(self.liste_resultats)
+        
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
         return _pretty_print_json(self.liste_resultats)
 
@@ -39,6 +42,9 @@ class Resultat(object):
     
     def __getitem__(self, key): # Méthode pour récupérer la valeur d'un attribut comme un dictionnaire (ex : resultat["titre"])
         return self.resultat.get(key)
+        
+    def __str__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
+        return _pretty_print_json(self.resultat)
         
     def __repr__(self): # Méthode d'affichage de l'objet (ici, une sortie JSON indentée)
         return _pretty_print_json(self.resultat)
