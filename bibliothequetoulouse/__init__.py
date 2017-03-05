@@ -58,6 +58,9 @@ def _pretty_print_json(python_object):
         return chaine_json.encode('utf-8')
     
 def rechercher(titre="", auteur="", pertinence_minimum=0.7, bibli_souhaitees=[], dispo_uniquement=False, sauf_braille=True):
+    if (auteur == None) : auteur = ""
+    if (titre == None) : titre = ""
+    
     bib = Client()
     liste_resultats = bib.rechercher(titre, auteur)
     
